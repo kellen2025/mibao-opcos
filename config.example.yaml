@@ -1,0 +1,102 @@
+# 米宝OpcOS 配置文件
+# 复制此文件为 config.yaml 并按需修改
+
+# ============================================
+# 基础配置
+# ============================================
+
+# 技能名称
+name: mibao-opcos
+
+# 版本号
+version: 5.0.0
+
+# 平台（hermes，安装时自动检测）
+# platform: hermes
+
+# ============================================
+# 部门一：秘书处配置（记忆中枢）
+# ============================================
+
+secretariat:
+  # L1 MEMORY.md配置
+  l1:
+    # 字节限值（中文每字3字节）
+    limit_default: 4000    # 主控Agent
+    limit_subagent: 2000   # 子Agent
+
+  # L2层配置（mem0）
+  l2:
+    # 记忆提取方案：cloud(云端API) / local(fastembed) / disabled
+    mode: cloud
+
+    # mem0 配置（安装时由 setup-memory 自动生成 ~/.hermes/opcos/mem0.yaml）
+    config_file: ~/.hermes/opcos/mem0.yaml
+
+  # L3层配置（session_search，无需额外配置）
+
+# ============================================
+# 部门二：档案室配置（文档档案）
+# ============================================
+
+archives:
+  # 档案室根目录
+  root: ~/.hermes/archives
+
+  # 分类目录
+  categories:
+    - 机制
+    - 方案
+    - 项目
+    - 会议
+    - 档案
+
+# ============================================
+# 部门三：协作部配置（岗位协作）
+# ============================================
+
+collaboration:
+  # 子Agent配置
+  delegation:
+    child_timeout_seconds: 1800
+    max_iterations: 50
+    max_concurrent_children: 3
+    max_spawn_depth: 1
+
+  # 岗位 profiles（由 install.sh 一键部署）
+  roles:
+    - opc-coo      # 总参谋长
+    - opc-pm       # 产品经理
+    - opc-fe       # 前端工程师
+    - opc-be       # 后端工程师
+    - opc-db       # 数据库工程师
+    - opc-design   # 设计师
+    - opc-sec      # 安全工程师
+    - opc-mkt      # 运营增长
+    - opc-cfo      # 财务风控
+    - opc-qa       # 质检官
+
+# ============================================
+# 部门四：质检部配置（五关验证）
+# ============================================
+
+quality:
+  # 验证关卡
+  gates:
+    - delivery      # ① 交付质量关
+    - boundary      # ② 边界合规关
+    - evidence      # ③ 证据验证关
+    - coo_review    # ④ COO复审
+    - ceo_approval  # ⑤ CEO终审
+
+  # 打回次数上限
+  max_retry: 3
+
+# ============================================
+# 通知配置（可选）
+# ============================================
+
+# notifications:
+#   telegram:
+#     enabled: false
+#     chat_id: ""
