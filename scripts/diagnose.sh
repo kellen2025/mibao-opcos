@@ -34,7 +34,7 @@ echo ""
 echo "【部门三 · 协作部（岗位 profiles）】"
 DEPLOYED=$(hermes profile list 2>/dev/null | grep -c 'opc-')
 [ "$DEPLOYED" -gt 0 ] && ok "已部署 $DEPLOYED 个岗位" || warn "无岗位部署"
-for role in opc-coo opc-pm; do
+for role in opc-coo opc-pm opc-fe opc-be opc-db opc-design opc-sec opc-mkt opc-cfo opc-qa; do
     if hermes profile list 2>/dev/null | grep -q "$role"; then
         [ -f "$HOME/.hermes/profiles/$role/SOUL.md" ] && ok "$role: SOUL.md ✓" || warn "$role: SOUL.md 缺失"
         [ -f "$HOME/.hermes/profiles/$role/memories/MEMORY.md" ] && ok "$role: MEMORY.md ✓" || warn "$role: MEMORY.md 缺失"
