@@ -34,7 +34,7 @@ ok "Python $(python3 --version 2>&1 | awk '{print $2}')"
 # ─── Step 2: 国内网络检测 ───
 info "Step 2/6: 检测网络环境..."
 IS_CHINA=false
-if ! curl -s --connect-timeout 5 https://pypi.org/simple/ &>/dev/null; then
+if ! curl -s --connect-timeout 5 --max-time 8 https://pypi.org/simple/ &>/dev/null; then
     IS_CHINA=true
     warn "检测到国内网络，启用镜像加速"
     PIP_MIRROR="-i https://pypi.tuna.tsinghua.edu.cn/simple"
