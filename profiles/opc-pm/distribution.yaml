@@ -1,0 +1,11 @@
+name: opc-pm
+version: 0.1.0
+description: "米宝OpcOS·产品经理：需求分析、PRD、方案设计，直属COO调度"
+author: kellen2025
+license: MIT
+hermes_requires: ">=0.12.0"
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
+  - cron
