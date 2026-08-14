@@ -32,9 +32,14 @@
 
 ## 一键安装
 
+> ⚠️ 为防供应链攻击，不提供 `curl | bash` 内联执行。下载后校验 SHA-256 再执行。
+
 ```bash
-# 官方通道（推荐）
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/kellen2025/mibao-opcos/main/scripts/install.sh)"
+# 下载 + 校验哈希 + 执行
+curl -fsSL -o install.sh https://raw.githubusercontent.com/kellen2025/mibao-opcos/main/scripts/install.sh
+curl -fsSL https://raw.githubusercontent.com/kellen2025/mibao-opcos/main/SHA256SUMS
+sha256sum -c SHA256SUMS --ignore-missing   # 确认 install.sh: OK
+bash install.sh
 
 # 或手动
 git clone https://github.com/kellen2025/mibao-opcos.git
