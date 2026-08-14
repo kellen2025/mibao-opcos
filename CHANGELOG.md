@@ -26,6 +26,45 @@
 
 # 变更日志
 
+## v4.6.1 (2026-07-08)
+
+### SkillHub反馈优化
+- 渠道区分：skillhub.cn专用README + GitHub专用README
+- 优化错误提示：增加错误提示函数和帮助信息
+- 集中避坑指南：FAQ新增避坑章节
+- 自动诊断脚本：新增diagnose.sh
+- 高级功能文档：新增docs/advanced-features.md
+## v4.6.0 (2026-07-08)
+
+### 马诺防线质量提升
+- 增加Python代码质量评分（圈复杂度）
+- 增加Bandit安全扫描
+- 增加TypeScript类型检查
+- 增加Go格式化检查
+- 增加Rust Clippy检查
+- 增加Dart分析支持
+
+### 语言扩展
+- Python: ruff + 质量评分 + bandit
+- JavaScript/TypeScript: eslint + TypeScript类型检查
+- Go: gofmt格式化检查
+- Rust: Clippy检查
+- Java: google-java-format
+- Dart: dart analyze
+
+## v4.5.0 (2026-07-08)
+
+### 马诺防线优化
+- 新增mano.sh统一入口脚本
+- 为mano_engine.sh添加help功能
+- 新增tests/test_manou.sh单元测试（17个测试）
+- 修复mano_review.sh变量未绑定问题
+- 修复mano_engine.sh参数解析问题
+
+### 测试结果
+- 马诺防线单元测试：17/17通过
+- 工蚁单元测试：17/17通过
+
 ## v4.4.0 (2026-07-08)
 
 ### 专注Hermes平台
@@ -129,42 +168,3 @@
 - 双平台支持（Hermes/OpenClaw）
 - 一键安装脚本
 
-## v4.5.0 (2026-07-08)
-
-### 马诺防线优化
-- 新增mano.sh统一入口脚本
-- 为mano_engine.sh添加help功能
-- 新增tests/test_manou.sh单元测试（17个测试）
-- 修复mano_review.sh变量未绑定问题
-- 修复mano_engine.sh参数解析问题
-
-### 测试结果
-- 马诺防线单元测试：17/17通过
-- 工蚁单元测试：17/17通过
-
-## v4.6.0 (2026-07-08)
-
-### 马诺防线质量提升
-- 增加Python代码质量评分（圈复杂度）
-- 增加Bandit安全扫描
-- 增加TypeScript类型检查
-- 增加Go格式化检查
-- 增加Rust Clippy检查
-- 增加Dart分析支持
-
-### 语言扩展
-- Python: ruff + 质量评分 + bandit
-- JavaScript/TypeScript: eslint + TypeScript类型检查
-- Go: gofmt格式化检查
-- Rust: Clippy检查
-- Java: google-java-format
-- Dart: dart analyze
-
-## v4.6.1 (2026-07-08)
-
-### SkillHub反馈优化
-- 渠道区分：skillhub.cn专用README + GitHub专用README
-- 优化错误提示：增加错误提示函数和帮助信息
-- 集中避坑指南：FAQ新增避坑章节
-- 自动诊断脚本：新增diagnose.sh
-- 高级功能文档：新增docs/advanced-features.md
