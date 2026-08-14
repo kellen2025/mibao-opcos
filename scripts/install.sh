@@ -111,19 +111,107 @@ EOF
         # 国内镜像三件套（实测必须）
         export HF_ENDPOINT=https://hf-mirror.com
         export HF_HUB_DISABLE_XET=1
+
+        # ── 检测本地 LLM 运行时（记忆提取必需）──
+        echo ""
+        info "检测本地 LLM 运行时（记忆提取需要）..."
+        LOCAL_LLM="none"
+        if command -v ollama &>/dev/null; then
+            LOCAL_LLM="ollama"
+            ok "检测到 ollama: $(ollama --version 2>&1 | head -1)"
+        elif command -v llama-server &>/dev/null || command -v llama-cli &>/dev/null || command -v llama.cpp &>/dev/null; then
+            LOCAL_LLM="llamacpp"
+            ok "检测到 llama.cpp"
+        fi
+
+        if [ "$LOCAL_LLM" = "none" ]; then
+            echo ""
+            warn "未检测到 ollama / llama.cpp。记忆提取需要一个本地 LLM。"
+            echo ""
+            echo "  请选择："
+            echo "    [1] 我现在安装 ollama（推荐，约1分钟）"
+            echo "        curl -fsSL https://ollama.com/install.sh | sh"
+            echo "        安装完成后输入任意键继续检测"
+            echo "    [2] 我已有 llama.cpp（自行启动 server 后继续）"
+            echo "    [3] 跳过本地 LLM，仅使用 L1+L3 记忆（无向量检索）"
+            echo "    [4] 切换回云端 API 方案"
+            read -p "  请输入选择 [1-4]: " LLM_CHOICE
+            LLM_CHOICE=${LLM_CHOICE:-3}
+            case $LLM_CHOICE in
+                1)
+                    info "请先安装 ollama，再回来继续。安装命令："
+                    echo "  curl -fsSL https://ollama.com/install.sh | sh"
+                    echo "  安装完成后运行: $0"
+                    echo "  或输入 'r' 立即重试检测"
+                    read -p "  安装完成后按回车继续，或输入 r 立即重试: " RETRY
+                    if [ "${RETRY:-}" != "r" ] && [ "${RETRY:-}" != "R" ]; then
+                        info "等待 ollama 安装完成..."
+                        while ! command -v ollama &>/dev/null; do sleep 5; done
+                    fi
+                    command -v ollama &>/dev/null && { LOCAL_LLM="ollama"; ok "ollama 已就绪: $(ollama --version 2>&1 | head -1)"; } || warn "仍未检测到 ollama"
+                    ;;
+                2)
+                    info "请自行启动 llama.cpp server（如: llama-server -m model.gguf --port 8080）"
+                    read -p "  启动完成后按回车继续: " _
+                    if command -v llama-server &>/dev/null || curl -s --max-time 3 http://localhost:8080/v1/models &>/dev/null; then
+                        LOCAL_LLM="llamacpp"; ok "llama.cpp 服务已就绪"
+                    else
+                        warn "未检测到 llama.cpp，降级为仅 L1+L3"
+                    fi
+                    ;;
+                4)
+                    info "切换云端 API 方案，请重新运行安装脚本并选择 A"
+                    ;;
+                *)
+                    warn "跳过本地 LLM，仅使用 L1+L3 记忆"
+                    ;;
+            esac
+        fi
+
+        # ── 写入 mem0 配置 ──
         mkdir -p "$HOME/.hermes/opcos"
-        cat > "$HOME/.hermes/opcos/mem0.yaml" << EOF
+        if [ "$LOCAL_LLM" = "ollama" ]; then
+            # 检测可用模型
+            OLLAMA_MODEL=""
+            if command -v ollama &>/dev/null; then
+                OLLAMA_MODEL=$(ollama list 2>/dev/null | awk 'NR>1{print $1; exit}')
+            fi
+            if [ -z "$OLLAMA_MODEL" ]; then
+                echo ""
+                warn "ollama 无可用模型。请拉取一个（如: ollama pull qwen2.5:7b）"
+                read -p "  拉取完成后按回车继续: " _
+                OLLAMA_MODEL=$(ollama list 2>/dev/null | awk 'NR>1{print $1; exit}')
+            fi
+            OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+            cat > "$HOME/.hermes/opcos/mem0.yaml" << EOF
 llm:
   provider: ollama
   config:
-    model: llama3.1:8b
+    model: ${OLLAMA_MODEL}
     ollama_base_url: http://localhost:11434
 embedder:
   provider: fastembed
   config:
     model: BAAI/bge-small-en-v1.5
 EOF
-        ok "fastembed 配置已写入（本地离线）"
+            ok "mem0 配置已写入（ollama + ${OLLAMA_MODEL}，纯离线）"
+        elif [ "$LOCAL_LLM" = "llamacpp" ]; then
+            cat > "$HOME/.hermes/opcos/mem0.yaml" << EOF
+llm:
+  provider: litellm
+  config:
+    model: openai/llama3
+    api_base: http://localhost:8080/v1
+    api_key: local
+embedder:
+  provider: fastembed
+  config:
+    model: BAAI/bge-small-en-v1.5
+EOF
+            ok "mem0 配置已写入（llama.cpp + localhost:8080，纯离线）"
+        else
+            warn "无本地 LLM，跳过 L2 配置（仅 L1+L3）"
+        fi
         ;;
     *)
         warn "无效选择，跳过 L2 记忆配置（仅 L1+L3）"
