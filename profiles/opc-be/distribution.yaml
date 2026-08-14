@@ -1,0 +1,11 @@
+name: opc-be
+version: 0.1.0
+description: "米宝OpcOS·后端工程师：API设计/服务实现/业务逻辑，直属COO调度"
+author: kellen2025
+license: MIT
+hermes_requires: ">=0.12.0"
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
+  - cron
