@@ -28,6 +28,13 @@ if ! command -v python3 &>/dev/null; then err "未检测到 Python3"; exit 1; fi
 if ! command -v uv &>/dev/null && ! command -v hermes &>/dev/null; then
     err "未检测到 uv/hermes"; exit 1
 fi
+if ! command -v curl &>/dev/null; then err "未检测到 curl（远程岗位包下载需要）"; exit 1; fi
+if ! command -v unzip &>/dev/null; then
+    warn "未检测到 unzip，岗位包远程下载将不可用"
+    HAS_UNZIP=false
+else
+    HAS_UNZIP=true
+fi
 UV_BIN="$(command -v uv || echo "$HOME/.hermes/bin/uv")"
 ok "Python $(python3 --version 2>&1 | awk '{print $2}')"
 
@@ -72,7 +79,7 @@ echo "  [B] 使用 fastembed 本地向量（免费）"
 echo "      - pip 安装 fastembed，自动下载模型"
 echo "      - 完全离线，无需 API Key"
 echo ""
-read -p "请输入选择 [A/B]: " MEM_CHOICE
+read -r -p "请输入选择 [A/B]: " MEM_CHOICE || true
 MEM_CHOICE=${MEM_CHOICE:-A}
 
 case $MEM_CHOICE in
@@ -82,12 +89,16 @@ case $MEM_CHOICE in
         echo "  检测到 Hermes 已配置的模型路由："
         grep -E "^\s+provider:" "$HOME/.hermes/config.yaml" 2>/dev/null | head -5 | sed 's/^/    /' || true
         echo ""
-        read -p "  LLM Provider [deepseek]: " LLM_PROVIDER
+        read -r -p "  LLM Provider [deepseek]: " LLM_PROVIDER || true
         LLM_PROVIDER=${LLM_PROVIDER:-deepseek}
-        read -p "  API Key: " LLM_API_KEY
-        read -p "  Base URL [回车用默认]: " LLM_BASE_URL
-        read -p "  模型名 [deepseek-chat]: " LLM_MODEL
+        read -rsp "  API Key（输入不回显）: " LLM_API_KEY || true
+        echo ""
+        read -r -p "  Base URL [回车用默认]: " LLM_BASE_URL || true
+        read -r -p "  模型名 [deepseek-chat]: " LLM_MODEL || true
         LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+        if [ -z "${LLM_API_KEY:-}" ]; then
+            warn "未输入 API Key，跳过 L2 配置（仅 L1+L3）"
+        else
         # 写入 mem0 配置
         mkdir -p "$HOME/.hermes/opcos"
         cat > "$HOME/.hermes/opcos/mem0.yaml" << EOF
@@ -103,6 +114,7 @@ embedder:
     model: BAAI/bge-small-en-v1.5
 EOF
         ok "云端 API 配置已写入 ~/.hermes/opcos/mem0.yaml"
+        fi
         ;;
     b|B)
         info "配置 fastembed 本地模式..."
@@ -135,24 +147,28 @@ EOF
             echo "    [2] 我已有 llama.cpp（自行启动 server 后继续）"
             echo "    [3] 跳过本地 LLM，仅使用 L1+L3 记忆（无向量检索）"
             echo "    [4] 切换回云端 API 方案"
-            read -p "  请输入选择 [1-4]: " LLM_CHOICE
+            read -r -p "  请输入选择 [1-4]: " LLM_CHOICE
             LLM_CHOICE=${LLM_CHOICE:-3}
             case $LLM_CHOICE in
                 1)
                     info "请先安装 ollama，再回来继续。安装命令："
                     echo "  curl -fsSL https://ollama.com/install.sh | sh"
-                    echo "  安装完成后运行: $0"
+                    echo "  安装完成后，重新运行本安装脚本即可"
                     echo "  或输入 'r' 立即重试检测"
-                    read -p "  安装完成后按回车继续，或输入 r 立即重试: " RETRY
+                    read -r -p "  安装完成后按回车继续，或输入 r 立即重试: " RETRY || true
                     if [ "${RETRY:-}" != "r" ] && [ "${RETRY:-}" != "R" ]; then
                         info "等待 ollama 安装完成..."
-                        while ! command -v ollama &>/dev/null; do sleep 5; done
+                        # 最多等待 10 分钟，避免无限循环
+                        for _ in $(seq 1 120); do
+                            command -v ollama &>/dev/null && break
+                            sleep 5
+                        done
                     fi
                     command -v ollama &>/dev/null && { LOCAL_LLM="ollama"; ok "ollama 已就绪: $(ollama --version 2>&1 | head -1)"; } || warn "仍未检测到 ollama"
                     ;;
                 2)
                     info "请自行启动 llama.cpp server（如: llama-server -m model.gguf --port 8080）"
-                    read -p "  启动完成后按回车继续: " _
+                    read -r -p "  启动完成后按回车继续: " _ || true
                     if command -v llama-server &>/dev/null || curl -s --max-time 3 http://localhost:8080/v1/models &>/dev/null; then
                         LOCAL_LLM="llamacpp"; ok "llama.cpp 服务已就绪"
                     else
@@ -179,7 +195,7 @@ EOF
             if [ -z "$OLLAMA_MODEL" ]; then
                 echo ""
                 warn "ollama 无可用模型。请拉取一个（如: ollama pull qwen2.5:7b）"
-                read -p "  拉取完成后按回车继续: " _
+                read -r -p "  拉取完成后按回车继续: " _ || true
                 OLLAMA_MODEL=$(ollama list 2>/dev/null | awk 'NR>1{print $1; exit}')
             fi
             OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
@@ -228,9 +244,18 @@ if [ ! -d "$PROFILES_DIR" ]; then
     warn "本机未找到岗位包目录，尝试从 GitHub 下载..."
     PROFILES_DIR="$HOME/.hermes/opcos-profiles"
     if [ ! -d "$PROFILES_DIR" ]; then
-        REPO_URL="https://github.com/kellen2025/mibao-opcos/archive/refs/heads/main.zip"
-        if curl -sL --connect-timeout 15 --max-time 60 -o /tmp/opcos-profiles.zip "$REPO_URL" 2>/dev/null; then
-            mkdir -p /tmp/opcos-extract && unzip -q -o /tmp/opcos-profiles.zip -d /tmp/opcos-extract 2>/dev/null
+        REPO_URL="https://codeload.github.com/kellen2025/mibao-opcos/zip/refs/heads/main"
+        if curl -sL --connect-timeout 15 --max-time 120 -o /tmp/opcos-profiles.zip "$REPO_URL" 2>/dev/null && [ -s /tmp/opcos-profiles.zip ]; then
+            if [ "$HAS_UNZIP" = "true" ]; then
+                mkdir -p /tmp/opcos-extract && unzip -q -o /tmp/opcos-profiles.zip -d /tmp/opcos-extract 2>/dev/null
+            else
+                # 无 unzip 时用 python 解压
+                mkdir -p /tmp/opcos-extract && python3 -c "
+import zipfile, sys
+with zipfile.ZipFile('/tmp/opcos-profiles.zip') as z:
+    z.extractall('/tmp/opcos-extract')
+" 2>/dev/null
+            fi
             SRC_PROFILES=$(find /tmp/opcos-extract -maxdepth 2 -type d -name "profiles" | head -1)
             if [ -n "$SRC_PROFILES" ] && [ -d "$SRC_PROFILES" ]; then
                 cp -r "$SRC_PROFILES" "$PROFILES_DIR"
