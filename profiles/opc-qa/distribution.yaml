@@ -1,0 +1,11 @@
+name: opc-qa
+version: 0.1.0
+description: "米宝OpcOS·质检官：五关验证执行（质量/边界/证据/复审），直属COO调度"
+author: kellen2025
+license: MIT
+hermes_requires: ">=0.12.0"
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
+  - cron
