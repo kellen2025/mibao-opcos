@@ -1,0 +1,11 @@
+name: opc-coo
+version: 0.1.0
+description: "OPC协作部·总参谋长：任务拆解、调度、汇总汇报，唯一直接向老板汇报的Agent"
+author: kellen2025
+license: MIT
+hermes_requires: ">=0.12.0"
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
+  - cron
