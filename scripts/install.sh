@@ -296,7 +296,11 @@ fi
 
 # ─── Step 5: 档案室初始化 ───
 info "Step 5/6: 初始化档案室..."
-ARCHIVES="$HOME/.hermes/archives"
+ARCHIVES="${ARCHIVES_DIR:-$HOME/.hermes/archives}"
+# 若指定了档案室外部路径且存在，优先使用
+if [ -d "/media/kellen/DATE/hermes" ]; then
+    ARCHIVES="/media/kellen/DATE/hermes"
+fi
 for dir in 机制 方案 项目 会议 档案; do
     mkdir -p "$ARCHIVES/$dir"
 done
