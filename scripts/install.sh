@@ -44,9 +44,12 @@ IS_CHINA=false
 if ! curl -s --connect-timeout 5 --max-time 8 https://pypi.org/simple/ &>/dev/null; then
     IS_CHINA=true
     warn "检测到国内网络，启用镜像加速"
+    # 镜像 URL 白名单（仅此一个，防供应链污染）
     PIP_MIRROR="-i https://pypi.tuna.tsinghua.edu.cn/simple"
+    HF_MIRROR="https://hf-mirror.com"
 else
     PIP_MIRROR=""
+    HF_MIRROR="https://huggingface.co"
     ok "网络连接正常"
 fi
 
@@ -60,7 +63,7 @@ fi
 
 if ! "$OPCOS_VENV/bin/python" -c "import mem0" &>/dev/null 2>&1; then
     info "安装 mem0ai（依赖轻量，核心8个包）..."
-    "$UV_BIN" pip install --python "$OPCOS_VENV/bin/python" $PIP_MIRROR mem0ai >/dev/null 2>&1 || {
+    "$UV_BIN" pip install --python "$OPCOS_VENV/bin/python" $PIP_MIRROR "mem0ai==2.0.18" >/dev/null 2>&1 || {
         err "mem0ai 安装失败，请检查网络后重试"; exit 1; }
 fi
 ok "mem0ai 已安装"
@@ -99,29 +102,37 @@ case $MEM_CHOICE in
         if [ -z "${LLM_API_KEY:-}" ]; then
             warn "未输入 API Key，跳过 L2 配置（仅 L1+L3）"
         else
-        # 写入 mem0 配置
+        # 写入 mem0 配置：密钥不落盘明文，改为引用环境变量
+        # 密钥存入 ~/.hermes/opcos/.env（600权限），mem0.yaml 通过变量引用
         mkdir -p "$HOME/.hermes/opcos"
+        # .env 已存在则更新 OPCOS_LLM_API_KEY，否则创建
+        touch "$HOME/.hermes/opcos/.env"
+        chmod 600 "$HOME/.hermes/opcos/.env"
+        # 移除旧的 key 行再追加（防重复）
+        sed -i "/^OPCOS_LLM_API_KEY=/d" "$HOME/.hermes/opcos/.env" 2>/dev/null || true
+        echo "OPCOS_LLM_API_KEY=${LLM_API_KEY}" >> "$HOME/.hermes/opcos/.env"
+        # mem0.yaml 只写变量名引用，不写明文
         cat > "$HOME/.hermes/opcos/mem0.yaml" << EOF
 llm:
   provider: ${LLM_PROVIDER}
   config:
     model: ${LLM_MODEL}
-    api_key: ${LLM_API_KEY}
+    api_key: \${OPCOS_LLM_API_KEY}
     base_url: ${LLM_BASE_URL}
 embedder:
   provider: fastembed
   config:
     model: BAAI/bge-small-en-v1.5
 EOF
-        ok "云端 API 配置已写入 ~/.hermes/opcos/mem0.yaml"
+        ok "云端 API 配置已写入 ~/.hermes/opcos/mem0.yaml（密钥存 .env，600权限）"
         fi
         ;;
     b|B)
         info "配置 fastembed 本地模式..."
-        "$UV_BIN" pip install --python "$OPCOS_VENV/bin/python" $PIP_MIRROR fastembed >/dev/null 2>&1 || {
+        "$UV_BIN" pip install --python "$OPCOS_VENV/bin/python" $PIP_MIRROR "fastembed==0.7.4" >/dev/null 2>&1 || {
             err "fastembed 安装失败"; exit 1; }
-        # 国内镜像三件套（实测必须）
-        export HF_ENDPOINT=https://hf-mirror.com
+        # 国内镜像三件套（实测必须，URL 来自白名单）
+        export HF_ENDPOINT="$HF_MIRROR"
         export HF_HUB_DISABLE_XET=1
 
         # ── 检测本地 LLM 运行时（记忆提取必需）──
@@ -279,9 +290,23 @@ if [ -d "$PROFILES_DIR" ]; then
             ok "岗位已存在: $role_name（跳过）"
         else
             hermes profile install "$role_dir" --alias -y >/dev/null 2>&1 && {
-                # 凭证继承 + memories 种子（USER_OWNED_EXCLUDE 后置）
+                # 凭证继承：仅复制 LLM provider 相关 key（不复制全部 .env）
+                # 首次部署时询问用户是否继承凭证
                 if [ ! -f "$HOME/.hermes/profiles/$role_name/.env" ] && [ -f "$HOME/.hermes/.env" ]; then
-                    cp "$HOME/.hermes/.env" "$HOME/.hermes/profiles/$role_name/.env"
+                    if [ -z "${OPCOS_YES:-}" ]; then
+                        read -r -p "  是否为 $role_name 继承主 profile 凭证? [y/N]: " INHERIT_ENV || true
+                        INHERIT_ENV=${INHERIT_ENV:-n}
+                    else
+                        INHERIT_ENV="y"
+                    fi
+                    if [ "$INHERIT_ENV" = "y" ] || [ "$INHERIT_ENV" = "Y" ]; then
+                        # 只挑选 LLM 相关变量（DEEPSEEK_API_KEY/OPENAI_API_KEY/ANTHROPIC_API_KEY 等），排除无关敏感项
+                        grep -E "^(DEEPSEEK|OPENAI|ANTHROPIC|GEMINI|MINIMAX|XAI|GROQ|OPENROUTER).*_API_KEY=|^(DEEPSEEK|OPENAI|ANTHROPIC|GEMINI|MINIMAX|XAI|GROQ|OPENROUTER).*_BASE_URL=" "$HOME/.hermes/.env" 2>/dev/null > "$HOME/.hermes/profiles/$role_name/.env" || true
+                        chmod 600 "$HOME/.hermes/profiles/$role_name/.env"
+                        ok "  $role_name: 已继承 LLM 凭证"
+                    else
+                        warn "  $role_name: 跳过凭证继承"
+                    fi
                 fi
                 mkdir -p "$HOME/.hermes/profiles/$role_name/memories"
                 [ -f "$role_dir/seed/USER.md" ] && cp "$role_dir/seed/USER.md" "$HOME/.hermes/profiles/$role_name/memories/USER.md"
