@@ -40,8 +40,8 @@ secretariat:
 # ============================================
 
 archives:
-  # 档案室根目录
-  root: ~/.hermes/archives
+  # 档案室根目录（默认 /media/kellen/DATE/hermes，可用 ARCHIVES_DIR 覆盖）
+  root: /media/kellen/DATE/hermes
 
   # 分类目录
   categories:
