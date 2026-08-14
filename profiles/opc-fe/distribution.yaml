@@ -1,0 +1,11 @@
+name: opc-fe
+version: 0.1.0
+description: "米宝OpcOS·前端工程师：页面/交互/组件实现，直属COO调度"
+author: kellen2025
+license: MIT
+hermes_requires: ">=0.12.0"
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
+  - cron
