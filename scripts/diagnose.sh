@@ -46,11 +46,15 @@ done
 echo ""
 
 echo "【部门二 · 档案室】"
-[ -d "$HOME/.hermes/archives" ] && ok "档案室根目录" || fail "档案室未创建"
+ARCHIVES_CHECK="${ARCHIVES_DIR:-$HOME/.hermes/archives}"
+if [ -d "/media/kellen/DATE/hermes" ]; then
+    ARCHIVES_CHECK="/media/kellen/DATE/hermes"
+fi
+[ -d "$ARCHIVES_CHECK" ] && ok "档案室根目录 ($ARCHIVES_CHECK)" || fail "档案室未创建"
 for dir in 机制 方案 项目 会议 档案; do
-    [ -d "$HOME/.hermes/archives/$dir" ] && ok "分类: $dir/" || fail "分类: $dir/ 缺失"
+    [ -d "$ARCHIVES_CHECK/$dir" ] && ok "分类: $dir/" || fail "分类: $dir/ 缺失"
 done
-[ -f "$HOME/.hermes/archives/INDEX.md" ] && ok "INDEX.md" || fail "INDEX.md 缺失"
+[ -f "$ARCHIVES_CHECK/INDEX.md" ] && ok "INDEX.md" || fail "INDEX.md 缺失"
 echo ""
 
 echo "【部门四 · 质检部】"
