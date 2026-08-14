@@ -180,6 +180,20 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple mem0ai   # pip镜像
 
 ---
 
+## 岗位模型切换
+
+各岗位默认使用 deepseek-v4-flash。切换岗位模型/Provider 用模型管理器：
+
+```bash
+bash scripts/set-model.sh                    # 交互式：选岗位 → 选模型
+bash scripts/set-model.sh opc-coo gpt-4o openai        # 非交互：指定岗位+模型+provider
+bash scripts/set-model.sh opc-be qwen2.5-72b custom:agnes https://api.xxx.com/v1 sk-xxx
+```
+
+支持 provider：deepseek / openai / anthropic / gemini / custom:<名称>（自定义网关）。
+
+---
+
 ## 部门四：质检部（五关验证）
 
 > 原名"马诺防线"。防御四类 Agent 故障：低质量交付 / 无视边界 / 幻觉 / 恶性空转。
