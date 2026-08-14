@@ -296,10 +296,20 @@ fi
 
 # ─── Step 5: 档案室初始化 ───
 info "Step 5/6: 初始化档案室..."
+# 档案室路径优先级: ARCHIVES_DIR 环境变量 > 默认 ~/.hermes/archives
 ARCHIVES="${ARCHIVES_DIR:-$HOME/.hermes/archives}"
-# 若指定了档案室外部路径且存在，优先使用
-if [ -d "/media/kellen/DATE/hermes" ]; then
-    ARCHIVES="/media/kellen/DATE/hermes"
+# 安装时自动检测外部挂载盘，供用户选择（非强制）
+if [ -z "${ARCHIVES_DIR:-}" ] && [ -z "${OPCOS_SKIP_DISK_PROBE:-}" ]; then
+    DISKS=$(ls -d /media/*/* 2>/dev/null | grep -v "hermes$" | head -5 || true)
+    if [ -n "$DISKS" ]; then
+        echo ""
+        echo "  检测到外部存储盘："
+        echo "$DISKS" | sed 's/^/    /'
+        echo "  档案室默认使用: $ARCHIVES"
+        echo "  如需改到外部盘，请用 ARCHIVES_DIR 环境变量指定，例如："
+        echo "    ARCHIVES_DIR=/media/<用户>/<盘名>/hermes bash scripts/install.sh"
+        echo ""
+    fi
 fi
 for dir in 机制 方案 项目 会议 档案; do
     mkdir -p "$ARCHIVES/$dir"
