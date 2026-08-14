@@ -182,17 +182,23 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple mem0ai   # pip镜像
 
 ## 岗位模型切换
 
-**最简单用法（推荐）：改主 profile 一处，一键同步全员**
+**① 按职能分配不同模型（推荐）：一次配置，岗位各用各的**
 
 ```bash
-# 第1步：在主 profile 选模型（官方交互选择器，一次搞定）
-hermes model
-
-# 第2步：一键同步到全部 10 个岗位
-bash scripts/set-model.sh --all
+bash scripts/set-model.sh --plan
 ```
 
-**单岗位单独切换**：
+自动检测可用模型池（主配置 + custom providers），按 8 个职能组逐一询问分配：
+调度管理(COO) / 产品规划(PM) / 研发工程(FE+BE+DB) / 设计创意 / 安全保障 / 运营增长 / 财务风控 / 质量验证
+
+**② 全员统一（改主 profile 一处，同步全员）**
+
+```bash
+hermes model                    # 第1步：主 profile 选模型
+bash scripts/set-model.sh --all  # 第2步：一键同步到全部 10 个岗位
+```
+
+**③ 单岗位单独切换**：
 ```bash
 bash scripts/set-model.sh                    # 交互式：选岗位 → 选模型
 bash scripts/set-model.sh opc-coo gpt-4o openai        # 非交互：指定岗位+模型+provider
