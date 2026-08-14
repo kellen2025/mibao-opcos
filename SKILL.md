@@ -85,7 +85,7 @@ Agent准备写入
 
 ### mem0 配置（L2）
 - **云端 API 模式**（推荐）：复用 Hermes 已配置的模型路由，零额外安装
-- **fastembed 本地模式**：`pip install fastembed`，免费离线，无需 GPU/ollama
+- **fastembed 本地模式**：`pip install fastembed`，向量化免费离线，无需 GPU；记忆提取仍需本地 LLM（ollama/llama.cpp）或云端 API，安装脚本会自动检测引导
 - user_id 分区：`opc-coo` / `opc-pm` / `opc-fe` / `boss` 各自隔离
 
 ### 国内网络（实测三件套）
@@ -242,5 +242,6 @@ cp ~/.hermes/.env ~/.hermes/profiles/<name>/.env
 
 - 用户指南：`README.md`
 - 详细规范：`core/`（四部门）
-- 常见问题：`references/faq.md`
+- 岗位包：`profiles/`（10 岗位）
+- 安装/诊断：`scripts/`（install.sh / diagnose.sh）
 - 变更日志：`CHANGELOG.md`
