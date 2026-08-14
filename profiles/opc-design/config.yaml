@@ -1,0 +1,11 @@
+# opc-design 岗位配置
+model:
+  default: deepseek-v4-flash
+  provider: deepseek
+
+display:
+  language: zh-CN
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
