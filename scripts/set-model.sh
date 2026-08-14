@@ -6,9 +6,11 @@
 #    set-model.sh                    # 交互式选择岗位 + 模型
 #    set-model.sh <role>             # 指定岗位，交互选模型
 #    set-model.sh <role> <model> [provider] [base_url] [api_key]
+#    set-model.sh --all              # ★ 一键同步：主 profile 模型 → 全部岗位
 #  示例：
 #    set-model.sh opc-coo qwen2.5-72b custom:qwen
 #    set-model.sh opc-pm gpt-4o openai https://api.openai.com/v1 sk-xxx
+#    set-model.sh --all              # 改主 profile 后同步全员
 # ══════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -27,6 +29,39 @@ MODEL="${2:-}"
 PROVIDER="${3:-}"
 BASE_URL="${4:-}"
 API_KEY="${5:-}"
+
+# ─── --all 模式：同步主 profile 模型到全部岗位 ───
+if [ "$ROLE" = "--all" ] || [ "$ROLE" = "-a" ]; then
+    info "读取主 profile (default) 模型配置..."
+    MAIN_MODEL=$(hermes config get model.default 2>/dev/null || true)
+    MAIN_PROVIDER=$(hermes config get model.provider 2>/dev/null || true)
+    MAIN_BASE_URL=$(hermes config get model.base_url 2>/dev/null || true)
+    if [ -z "$MAIN_MODEL" ] || [ -z "$MAIN_PROVIDER" ]; then
+        err "主 profile 未配置模型。请先运行: hermes model（选择模型后重试）"
+        exit 1
+    fi
+    info "主配置: $MAIN_MODEL (provider: $MAIN_PROVIDER)"
+    echo ""
+    read -r -p "  同步到全部 10 个岗位? [y/N]: " CONFIRM || true
+    if [ "${CONFIRM:-n}" != "y" ] && [ "${CONFIRM:-n}" != "Y" ]; then
+        warn "已取消"
+        exit 0
+    fi
+    SYNCED=0
+    for r in $ALL_ROLES; do
+        if hermes profile list 2>/dev/null | grep -q "$r"; then
+            hermes -p "$r" config set model.default "$MAIN_MODEL" >/dev/null 2>&1 || true
+            hermes -p "$r" config set model.provider "$MAIN_PROVIDER" >/dev/null 2>&1 || true
+            if [ -n "$MAIN_BASE_URL" ]; then
+                hermes -p "$r" config set model.base_url "$MAIN_BASE_URL" >/dev/null 2>&1 || true
+            fi
+            SYNCED=$((SYNCED+1))
+        fi
+    done
+    echo ""
+    ok "已同步 $MAIN_MODEL 到 $SYNCED 个岗位。重启岗位会话生效。"
+    exit 0
+fi
 
 if [ -z "$ROLE" ]; then
     echo "请选择岗位："
