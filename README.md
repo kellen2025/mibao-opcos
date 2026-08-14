@@ -82,9 +82,9 @@ cd mibao-opcos && bash scripts/install.sh
 
 - 详细规范：`SKILL.md`
 - 部门机制：`core/`（秘书处/档案室/协作部/质检部）
-- 岗位包：`profiles/`
-- 安装脚本：`scripts/install.sh`
-- 常见问题：`references/faq.md`
+- 岗位包：`profiles/`（10 岗位）
+- 安装/诊断：`scripts/`（install.sh / diagnose.sh）
+- 变更日志：`CHANGELOG.md`
 
 ## 许可证
 
