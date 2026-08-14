@@ -222,6 +222,30 @@ esac
 info "Step 4/6: 部署协作部岗位 profiles..."
 PROFILES_DIR="$SKILL_DIR/profiles"
 DEPLOYED=0
+
+# 远程模式兜底：本机无 profiles/ 时从 GitHub 拉取岗位包
+if [ ! -d "$PROFILES_DIR" ]; then
+    warn "本机未找到岗位包目录，尝试从 GitHub 下载..."
+    PROFILES_DIR="$HOME/.hermes/opcos-profiles"
+    if [ ! -d "$PROFILES_DIR" ]; then
+        REPO_URL="https://github.com/kellen2025/mibao-opcos/archive/refs/heads/main.zip"
+        if curl -sL --connect-timeout 15 --max-time 60 -o /tmp/opcos-profiles.zip "$REPO_URL" 2>/dev/null; then
+            mkdir -p /tmp/opcos-extract && unzip -q -o /tmp/opcos-profiles.zip -d /tmp/opcos-extract 2>/dev/null
+            SRC_PROFILES=$(find /tmp/opcos-extract -maxdepth 2 -type d -name "profiles" | head -1)
+            if [ -n "$SRC_PROFILES" ] && [ -d "$SRC_PROFILES" ]; then
+                cp -r "$SRC_PROFILES" "$PROFILES_DIR"
+                ok "岗位包已从 GitHub 下载"
+            else
+                err "岗位包下载失败"
+                PROFILES_DIR="$SKILL_DIR/profiles"
+            fi
+        else
+            err "GitHub 下载失败，请手动部署岗位"
+            PROFILES_DIR="$SKILL_DIR/profiles"
+        fi
+    fi
+fi
+
 if [ -d "$PROFILES_DIR" ]; then
     for role_dir in "$PROFILES_DIR"/opc-*; do
         [ -d "$role_dir" ] || continue
