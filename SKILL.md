@@ -182,8 +182,17 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple mem0ai   # pip镜像
 
 ## 岗位模型切换
 
-各岗位默认使用 deepseek-v4-flash。切换岗位模型/Provider 用模型管理器：
+**最简单用法（推荐）：改主 profile 一处，一键同步全员**
 
+```bash
+# 第1步：在主 profile 选模型（官方交互选择器，一次搞定）
+hermes model
+
+# 第2步：一键同步到全部 10 个岗位
+bash scripts/set-model.sh --all
+```
+
+**单岗位单独切换**：
 ```bash
 bash scripts/set-model.sh                    # 交互式：选岗位 → 选模型
 bash scripts/set-model.sh opc-coo gpt-4o openai        # 非交互：指定岗位+模型+provider
