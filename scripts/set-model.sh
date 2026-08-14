@@ -7,10 +7,12 @@
 #    set-model.sh <role>             # 指定岗位，交互选模型
 #    set-model.sh <role> <model> [provider] [base_url] [api_key]
 #    set-model.sh --all              # ★ 一键同步：主 profile 模型 → 全部岗位
+#    set-model.sh --plan             # ★★ 按职能分组分配不同模型（10岗位×N模型）
 #  示例：
 #    set-model.sh opc-coo qwen2.5-72b custom:qwen
 #    set-model.sh opc-pm gpt-4o openai https://api.openai.com/v1 sk-xxx
 #    set-model.sh --all              # 改主 profile 后同步全员
+#    set-model.sh --plan             # 不同职能配不同模型
 # ══════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -29,6 +31,103 @@ MODEL="${2:-}"
 PROVIDER="${3:-}"
 BASE_URL="${4:-}"
 API_KEY="${5:-}"
+
+# ─── --plan 模式：按职能分组分配不同模型 ───
+if [ "$ROLE" = "--plan" ] || [ "$ROLE" = "-p" ]; then
+    # 职能分组定义：组名 -> 岗位列表
+    declare -A PLAN_GROUPS=(
+        ["调度管理"]="opc-coo"
+        ["产品规划"]="opc-pm"
+        ["研发工程"]="opc-fe opc-be opc-db"
+        ["设计创意"]="opc-design"
+        ["安全保障"]="opc-sec"
+        ["运营增长"]="opc-mkt"
+        ["财务风控"]="opc-cfo"
+        ["质量验证"]="opc-qa"
+    )
+    # 检测可用模型池（从主配置 + custom_providers 读取）
+    echo "════════ 可用模型池 ════════"
+    MODELS_POOL=()
+    MAIN_MODEL=$(hermes config get model.default 2>/dev/null || true)
+    MAIN_PROVIDER=$(hermes config get model.provider 2>/dev/null || true)
+    if [ -n "$MAIN_MODEL" ]; then
+        MODELS_POOL+=("$MAIN_MODEL|$MAIN_PROVIDER")
+        echo "  [1] $MAIN_MODEL (provider: $MAIN_PROVIDER)"
+    fi
+    # custom providers 的模型
+    CUSTOM_NAMES=$(python3 -c "
+import yaml
+cfg = yaml.safe_load(open('$HOME/.hermes/config.yaml'))
+for cp in cfg.get('custom_providers', []):
+    models = cp.get('models') or {}
+    for m in (models.keys() if isinstance(models, dict) else [models]):
+        print(f'{m}|custom:{cp[\"name\"]}|{cp.get(\"base_url\",\"\")}')
+" 2>/dev/null || true)
+    IDX=2
+    while IFS='|' read -r m p b; do
+        [ -z "$m" ] && continue
+        MODELS_POOL+=("$m|$p")
+        echo "  [$IDX] $m (provider: $p)"
+        IDX=$((IDX+1))
+    done <<< "$CUSTOM_NAMES"
+    if [ ${#MODELS_POOL[@]} -eq 0 ]; then
+        err "未检测到可用模型。请先配置主 profile 模型: hermes model"
+        exit 1
+    fi
+    echo ""
+
+    # 为每个职能组选择模型
+    echo "════════ 按职能分组配置 ════════"
+    echo "（输入对应模型序号，回车=保持该组当前模型）"
+    echo ""
+    declare -A PLAN_RESULT
+    for group in 调度管理 产品规划 研发工程 设计创意 安全保障 运营增长 财务风控 质量验证; do
+        roles="${PLAN_GROUPS[$group]}"
+        first_role=$(echo "$roles" | awk '{print $1}')
+        cur=$(hermes -p "$first_role" config get model.default 2>/dev/null | head -1 || true)
+        read -r -p "  [$group] ($roles) 当前:$cur → 模型序号: " SEL || true
+        if [ -n "$SEL" ] && [ "$SEL" -ge 1 ] 2>/dev/null && [ "$SEL" -le "${#MODELS_POOL[@]}" ]; then
+            PLAN_RESULT[$group]="${MODELS_POOL[$((SEL-1))]}"
+        else
+            PLAN_RESULT[$group]=""
+        fi
+    done
+
+    echo ""
+    echo "════════ 分配预览 ════════"
+    for group in 调度管理 产品规划 研发工程 设计创意 安全保障 运营增长 财务风控 质量验证; do
+        roles="${PLAN_GROUPS[$group]}"
+        if [ -n "${PLAN_RESULT[$group]:-}" ]; then
+            m="${PLAN_RESULT[$group]%%|*}"
+            p="${PLAN_RESULT[$group]##*|}"
+            echo "  $group ($roles) → $m ($p)"
+        else
+            echo "  $group ($roles) → 保持不变"
+        fi
+    done
+    echo ""
+    read -r -p "  确认应用? [y/N]: " CONFIRM2 || true
+    if [ "${CONFIRM2:-n}" != "y" ] && [ "${CONFIRM2:-n}" != "Y" ]; then
+        warn "已取消"
+        exit 0
+    fi
+
+    # 应用
+    APPLIED=0
+    for group in 调度管理 产品规划 研发工程 设计创意 安全保障 运营增长 财务风控 质量验证; do
+        [ -z "${PLAN_RESULT[$group]:-}" ] && continue
+        m="${PLAN_RESULT[$group]%%|*}"
+        p="${PLAN_RESULT[$group]##*|}"
+        for r in ${PLAN_GROUPS[$group]}; do
+            hermes -p "$r" config set model.default "$m" >/dev/null 2>&1 || true
+            hermes -p "$r" config set model.provider "$p" >/dev/null 2>&1 || true
+            APPLIED=$((APPLIED+1))
+        done
+    done
+    echo ""
+    ok "已按职能分配模型到 $APPLIED 个岗位。重启岗位会话生效。"
+    exit 0
+fi
 
 # ─── --all 模式：同步主 profile 模型到全部岗位 ───
 if [ "$ROLE" = "--all" ] || [ "$ROLE" = "-a" ]; then
