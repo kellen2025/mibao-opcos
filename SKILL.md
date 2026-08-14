@@ -112,7 +112,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple mem0ai   # pip镜像
 
 ### 目录结构
 ```
-~/.hermes/archives/
+/media/kellen/DATE/hermes/        # 默认档案室（可通过 ARCHIVES_DIR 环境变量覆盖）
 ├── INDEX.md                     # 多维索引
 ├── INDEX_LOG.md                 # 变更日志
 ├── 机制/  方案/  项目/  会议/  档案/
