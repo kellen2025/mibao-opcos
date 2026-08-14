@@ -1,0 +1,11 @@
+name: opc-cfo
+version: 0.1.0
+description: "米宝OpcOS·财务风控：成本核算/预算管理/资源分配建议/合规，直属COO调度"
+author: kellen2025
+license: MIT
+hermes_requires: ">=0.12.0"
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
+  - cron
