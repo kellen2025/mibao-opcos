@@ -95,6 +95,11 @@ Agent准备写入
 - **fastembed 本地模式**：`pip install fastembed`，向量化免费离线，无需 GPU；记忆提取仍需本地 LLM（ollama/llama.cpp）或云端 API，安装脚本会自动检测引导
 - user_id 分区：`opc-coo` / `opc-pm` / `opc-fe` / `boss` 各自隔离
 
+### 中文记忆优化（重要）
+- **embedding 用中文模型** `BAAI/bge-small-zh-v1.5`（默认已配），中文检索精准
+- **记忆保留原文语言**：内置 `custom_instructions` 强制提取时匹配输入语言——中文对话的记忆以中文原文入库，**不翻译成英文**（避免语义漂移）
+- 实测：中文记忆中文检索命中率 0.6-0.75，显著优于英文模型方案
+
 ### 国内网络（实测三件套）
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com          # 模型下载镜像
