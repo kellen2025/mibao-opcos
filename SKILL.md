@@ -307,6 +307,15 @@ cp ~/.hermes/.env ~/.hermes/profiles/<name>/.env
 - 用户指南：`README.md`
 - 详细规范：`core/`（四部门）
 - 岗位包：`profiles/`（10 岗位）
-- 安装/诊断：`scripts/`（install.sh / diagnose.sh / set-model.sh）
+- 安装/诊断：`scripts/`（install.sh / diagnose.sh / set-model.sh / **scan-secrets.sh**）
 - 开发经验：`references/lessons-learned.md`（踩坑与实测记录）
 - 变更日志：`CHANGELOG.md`
+
+## 安全铁律（推送前必读）
+
+**铁律④：更新仓库前，必须运行敏感信息扫描**——检查所有代码及文件是否含敏感信息（本机 API key、密码、银行信息、用户相关信息等），有则清除或改环境变量引用后才可推送。
+
+```bash
+bash scripts/scan-secrets.sh <目录>
+# 退出码 0=干净可推送；1=发现敏感信息，禁止推送
+```
