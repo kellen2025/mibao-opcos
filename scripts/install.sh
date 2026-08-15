@@ -122,7 +122,10 @@ llm:
 embedder:
   provider: fastembed
   config:
-    model: BAAI/bge-small-en-v1.5
+    model: BAAI/bge-small-zh-v1.5
+custom_instructions: >-
+  CRITICAL: Extract memories in the SAME language as the input.
+  If input is Chinese, output memories in Chinese. Never translate to English.
 EOF
         ok "云端 API 配置已写入 ~/.hermes/opcos/mem0.yaml（密钥存 .env，600权限）"
         fi
@@ -219,7 +222,10 @@ llm:
 embedder:
   provider: fastembed
   config:
-    model: BAAI/bge-small-en-v1.5
+    model: BAAI/bge-small-zh-v1.5
+custom_instructions: >-
+  CRITICAL: Extract memories in the SAME language as the input.
+  If input is Chinese, output memories in Chinese. Never translate to English.
 EOF
             ok "mem0 配置已写入（ollama + ${OLLAMA_MODEL}，纯离线）"
         elif [ "$LOCAL_LLM" = "llamacpp" ]; then
@@ -233,7 +239,10 @@ llm:
 embedder:
   provider: fastembed
   config:
-    model: BAAI/bge-small-en-v1.5
+    model: BAAI/bge-small-zh-v1.5
+custom_instructions: >-
+  CRITICAL: Extract memories in the SAME language as the input.
+  If input is Chinese, output memories in Chinese. Never translate to English.
 EOF
             ok "mem0 配置已写入（llama.cpp + localhost:8080，纯离线）"
         else
