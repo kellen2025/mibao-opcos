@@ -1,3 +1,20 @@
+## v5.0.1 (2026-08-15)
+
+### 功能
+- mem0 接入 Hermes 记忆链路（memory.provider=mem0，OSS 模式）：agnes 免费提取 + bge-small-zh 中文向量 + qdrant 本地库，跨会话记忆闭环实测通过
+- SKILL.md 新增「记忆操作指南」：/mem 快捷指令设计、分层说明（L1 memory 工具 / L2 mem0_add+search / L3 session_search）
+- 新增 references/lessons-learned.md 开发经验库（网络踩坑/mem0 接入/成本核算/agnes 能力实测）
+
+### 优化
+- set-model.sh 新增 --all（主配置同步全员）与 --plan（按职能组分配模型）模式
+- install.sh：B 分支增加 ollama/llama.cpp 检测引导；远程安装岗位包自动下载兜底；read 容错支持非交互模式
+- 记忆中文优化：embedding 换 bge-small-zh-v1.5 + custom_instructions 保留原文语言（实测检索精度 0.6-0.75）
+
+### 安全（skillhub 评审）
+- 移除 curl|bash 内联执行，改为下载 + SHA256SUMS 校验
+- API key 改存 .env（600权限）+ 配置变量引用，不落明文
+- .env 继承按需选择 + 逐岗位确认；镜像 URL 白名单 + 依赖版本锁定
+
 # 变更日志
 
 ## v5.0.0 (2026-08-14)
