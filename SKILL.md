@@ -100,6 +100,29 @@ Agent准备写入
 - **记忆保留原文语言**：内置 `custom_instructions` 强制提取时匹配输入语言——中文对话的记忆以中文原文入库，**不翻译成英文**（避免语义漂移）
 - 实测：中文记忆中文检索命中率 0.6-0.75，显著优于英文模型方案
 
+### 记忆操作指南（用户如何读写）
+
+**记忆是自动的 + 可手动干预的**：
+
+| 场景 | 机制 | 用户操作 |
+|------|------|---------|
+| **对话中的记忆自动写入** | Agent 识别到持久事实（偏好/决策/项目信息）时自动调用 `mem0_add` 工具 | 无需操作，自动完成 |
+| **手动指定记录** | 直接说"记住：XXX" 或 "记一下：XXX" | 说即可，Agent 会写入 mem0 |
+| **检索历史记忆** | Agent 回答前自动调用 `mem0_search` 语义检索 | 正常提问即可，自动带出 |
+| **查看自己记住了什么** | 问 Agent "你记得我什么？/你知道哪些关于我的事？" | Agent 会搜索并汇报 |
+| **删除/修正记忆** | 说"忘掉XXX / 改一下：XXX其实是YYY" | Agent 执行删除/更新 |
+
+**快捷指令**（对话中直接说）：
+- `记住：<内容>` → 写入 L2 mem0
+- `记一下：<内容>` → 同上
+- `你还记得<话题>吗？` → 触发 mem0 检索
+- `忘掉<内容>` → 删除
+
+**分层说明**：
+- `memory` 工具 = L1（MEMORY.md，注入每轮，限 4000 字节，铁律/偏好）
+- `mem0_add` / `mem0_search` = L2（mem0 语义库，不限大小，项目/历史/事实）
+- `session_search` = L3（原始会话全文）
+
 ### 国内网络（实测三件套）
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com          # 模型下载镜像
@@ -284,5 +307,6 @@ cp ~/.hermes/.env ~/.hermes/profiles/<name>/.env
 - 用户指南：`README.md`
 - 详细规范：`core/`（四部门）
 - 岗位包：`profiles/`（10 岗位）
-- 安装/诊断：`scripts/`（install.sh / diagnose.sh）
+- 安装/诊断：`scripts/`（install.sh / diagnose.sh / set-model.sh）
+- 开发经验：`references/lessons-learned.md`（踩坑与实测记录）
 - 变更日志：`CHANGELOG.md`
